@@ -1,4 +1,4 @@
-import { Message, ServiceType } from "common/types";
+import { Message, ServiceType } from "../common/types";
 
 export class Client {
   private url: string;

@@ -6,8 +6,8 @@ import {
   Kafka,
 } from "kafkajs";
 
-import { ServiceType } from "common/types";
-import { logger } from "logger";
+import { ServiceType } from "../common/types";
+import { logger } from "../logger";
 
 export class ConsumerFactory {
   private consumer: Consumer;

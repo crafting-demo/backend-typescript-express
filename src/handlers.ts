@@ -1,8 +1,16 @@
 import Express from "express";
 
-import { ActionType, Message, ServiceType } from "common/types";
-import { ProducerFactory } from "kafka/producer";
-import { logger } from "logger";
+import { Client as BackendClient } from "./backend";
+import {
+  ActionType,
+  Message,
+  Payload,
+  ServiceType,
+  StatusType,
+} from "./common/types";
+import { Client as DBClient } from "./db";
+import { ProducerFactory } from "./kafka";
+import { logger } from "./logger";
 
 // NestedCallHandler handles a "nested call" API.
 // Accepts POST requests with a JSON body specifying the nested call.
@@ -25,16 +33,64 @@ export const NestedCallHandler = (
     const action = message.actions[i];
     switch (action.action) {
       case ActionType.Echo:
+        message.actions[i].status = StatusType.Passed;
         break;
-      case ActionType.Read:
+      case ActionType.Read: {
+        const readClient = new DBClient(action.payload.serviceName);
+        const readOp = readClient.readEntity(action.payload.key || "");
+        if (readOp.errors) {
+          logger.write(
+            "NestedCallHandler",
+            "failed to read key",
+            readOp.errors
+          );
+          message.actions[i].status = StatusType.Failed;
+          break;
+        }
+        message.actions[i].status = StatusType.Passed;
+        message.actions[i].payload.value = readOp.value;
         break;
-      case ActionType.Write:
+      }
+      case ActionType.Write: {
+        const writeClient = new DBClient(action.payload.serviceName);
+        const writeOp = writeClient.writeEntity(
+          action.payload.key || "",
+          action.payload.value
+        );
+        if (writeOp.errors) {
+          logger.write(
+            "NestedCallHandler",
+            "failed to write key/value pair",
+            writeOp.errors
+          );
+          message.actions[i].status = StatusType.Failed;
+          break;
+        }
+        message.actions[i].status = StatusType.Passed;
         break;
-      case ActionType.Call:
+      }
+      case ActionType.Call: {
+        serviceCall(action.payload).then((resp) => {
+          if (resp) {
+            message.actions[i].status = StatusType.Passed;
+            message.actions[i].payload.actions = resp.actions;
+          } else {
+            logger.write(
+              "NestedCallHandler",
+              `failed to call ${action.payload.serviceName}`,
+              null
+            );
+            message.actions[i].status = StatusType.Failed;
+          }
+        });
         break;
+      }
       default:
         break;
     }
+
+    message.actions[i].serviceName = ServiceType.Express;
+    message.actions[i].returnTime = currentTime();
   }
 
   message.meta.returnTime = currentTime();
@@ -48,11 +104,25 @@ export const NestedCallHandler = (
   enqueueMessage(ServiceType.React, message);
 };
 
-export const enqueueMessage = (topic: string, message: Message) => {
+const serviceCall = async (payload: Payload): Promise<Message | null> => {
+  const message: Message = {
+    meta: {
+      caller: ServiceType.Express,
+      callee: payload.serviceName!,
+      callTime: currentTime(),
+    },
+    actions: payload.actions!,
+  };
+
+  const client = new BackendClient(message.meta.callee);
+  return client.makeNestedCall(message);
+};
+
+const enqueueMessage = (topic: string, message: Message) => {
   const producer = new ProducerFactory();
   producer.start().then(() => {
     producer.enqueue(topic, JSON.stringify(message));
   });
 };
 
-export const currentTime = (): string => new Date().toISOString();
+const currentTime = (): string => new Date().toISOString();

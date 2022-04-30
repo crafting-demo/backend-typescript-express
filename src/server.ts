@@ -1,8 +1,8 @@
 import cors from "cors";
 import express from "express";
 
-import { NestedCallHandler } from "handlers";
-import { logger } from "logger";
+import { NestedCallHandler } from "./handlers";
+import { logger } from "./logger";
 
 const server = express();
 const { PORT } = process.env;
@@ -16,4 +16,6 @@ server.use(cors());
 
 server.post("/", NestedCallHandler);
 
-server.listen(PORT);
+server.listen(PORT, () => {
+  logger.write("server", `listening on port ${PORT}`, null);
+});

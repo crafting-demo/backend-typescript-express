@@ -1,6 +1,6 @@
 import { Kafka, Message, Producer } from "kafkajs";
 
-import { logger } from "logger";
+import { logger } from "../logger";
 
 export class ProducerFactory {
   private producer: Producer;

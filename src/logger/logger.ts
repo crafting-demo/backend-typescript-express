@@ -1,7 +1,10 @@
 export class Logger {
   public static write(source: string, desc: string, err: any) {
-    const e = JSON.stringify(err);
-    process.stdout.write(`${source}: ${desc}${e ? `: ${e}` : ""}\n`);
+    process.stdout.write(
+      `${new Date().toLocaleString()} ${source}: ${desc}${
+        err ? `: ${err}` : ""
+      }\n`
+    );
   }
 }
 
