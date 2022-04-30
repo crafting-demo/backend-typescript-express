@@ -17,6 +17,7 @@ module.exports = {
   },
   plugins: ["@typescript-eslint", "import"],
   rules: {
+    "import/prefer-default-export": "off",
     "react/jsx-filename-extension": "off",
     "import/no-unresolved": "error",
     "import/order": [
