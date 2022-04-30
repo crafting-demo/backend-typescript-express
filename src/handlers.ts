@@ -15,7 +15,7 @@ import { logger } from "./logger";
 // NestedCallHandler handles a "nested call" API.
 // Accepts POST requests with a JSON body specifying the nested call.
 // It processes the nested call, and returns the result JSON message.
-export const NestedCallHandler = (
+export const NestedCallHandler = async (
   req: Express.Request,
   res: Express.Response
 ) => {
@@ -70,19 +70,19 @@ export const NestedCallHandler = (
         break;
       }
       case ActionType.Call: {
-        serviceCall(action.payload).then((resp) => {
-          if (resp) {
-            message.actions[i].status = StatusType.Passed;
-            message.actions[i].payload.actions = resp.actions;
-          } else {
-            logger.write(
-              "NestedCallHandler",
-              `failed to call ${action.payload.serviceName}`,
-              null
-            );
-            message.actions[i].status = StatusType.Failed;
-          }
-        });
+        // eslint-disable-next-line no-await-in-loop
+        const resp = await serviceCall(action.payload);
+        if (!resp) {
+          logger.write(
+            "NestedCallHandler",
+            `failed to call ${action.payload.serviceName}`,
+            null
+          );
+          message.actions[i].status = StatusType.Failed;
+          break;
+        }
+        message.actions[i].status = StatusType.Passed;
+        message.actions[i].payload.actions = resp.actions;
         break;
       }
       default:

@@ -1,3 +1,5 @@
+import fetch from "node-fetch";
+
 import { Message, ServiceType } from "../common/types";
 
 export class Client {
