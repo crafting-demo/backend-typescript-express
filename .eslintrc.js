@@ -17,6 +17,7 @@ module.exports = {
   },
   plugins: ["@typescript-eslint", "import"],
   rules: {
+    "@typescript-eslint/no-use-before-define": "off",
     "import/prefer-default-export": "off",
     "react/jsx-filename-extension": "off",
     "import/no-unresolved": "error",

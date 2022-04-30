@@ -4,9 +4,7 @@ export class Client {
   private url: string;
 
   constructor(serviceType: string) {
-    // TODO:
-    // use dotenv to load $SERVER_DNS_SUFFIX
-    const suffix = `${process.env.SERVER_DNS_SUFFIX}`;
+    const suffix = `${process.env.SANDBOX_ENDPOINT_DNS_SUFFIX}`;
     switch (serviceType) {
       case ServiceType.Gin:
         this.url = `https://gin${suffix}`;
