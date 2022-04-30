@@ -26,7 +26,7 @@ export class Client {
     }
   }
 
-  public async makeNestedCall(message: Message): Promise<Message | null> {
+  public async makeServiceCall(message: Message): Promise<Message | null> {
     const resp = await fetch(this.url, {
       method: "post",
       headers: {

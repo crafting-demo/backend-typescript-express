@@ -115,7 +115,7 @@ const serviceCall = async (payload: Payload): Promise<Message | null> => {
   };
 
   const client = new BackendClient(message.meta.callee);
-  return client.makeNestedCall(message);
+  return client.makeServiceCall(message);
 };
 
 const enqueueMessage = (topic: string, message: Message) => {
