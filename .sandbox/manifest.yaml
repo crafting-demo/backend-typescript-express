@@ -1,0 +1,16 @@
+hooks:
+  post-checkout:
+    cmd: yarn install
+  build:
+    cmd: yarn build
+
+daemons:
+  server:
+    run:
+      cmd: yarn start
+      env:
+        - HOST=0.0.0.0
+        - PORT=8080
+        - SANDBOX_ENDPOINT_DNS_SUFFIX=$SANDBOX_ENDPOINT_DNS_SUFFIX
+        - KAFKA_SERVICE_HOST=$KAFKA_SERVICE_HOST
+        - KAFKA_SERVICE_PORT=$KAFKA_SERVICE_PORT_KAFKA
