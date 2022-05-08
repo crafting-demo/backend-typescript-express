@@ -7,15 +7,15 @@ import { logger } from "./logger";
 const server = express();
 const { PORT } = process.env;
 if (!PORT) {
-  logger.write("server", "PORT must be set", null);
+  logger.Write("server", "PORT must be set", null);
   process.exit(1);
 }
 
 server.use(express.json());
 server.use(cors());
 
-server.post("/", NestedCallHandler);
+server.post("/api", NestedCallHandler);
 
 server.listen(PORT, () => {
-  logger.write("server", `listening on port ${PORT}`, null);
+  logger.Write("server listening on port", PORT, null);
 });
