@@ -43,7 +43,7 @@ export const NestedCallHandler = async (
         const readClient = new DBClient(action.payload.serviceName);
         const readOp = readClient.readEntity(action.payload.key || "");
         if (readOp.errors) {
-          errors.concat(readOp.errors);
+          errors.push(readOp.errors);
           message.actions[i].status = StatusType.Failed;
           break;
         }
@@ -58,7 +58,7 @@ export const NestedCallHandler = async (
           action.payload.value
         );
         if (writeOp.errors) {
-          errors.concat(writeOp.errors);
+          errors.push(writeOp.errors);
           message.actions[i].status = StatusType.Failed;
           break;
         }
@@ -69,7 +69,7 @@ export const NestedCallHandler = async (
         // eslint-disable-next-line no-await-in-loop
         const resp = await serviceCall(action.payload);
         if (!resp) {
-          errors.concat(`failed to call ${action.payload.serviceName}`);
+          errors.push(`failed to call ${action.payload.serviceName}`);
           message.actions[i].status = StatusType.Failed;
           break;
         }

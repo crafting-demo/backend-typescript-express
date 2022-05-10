@@ -20,7 +20,7 @@ export class Client {
     }
     return {
       key,
-      errors: "db client not implemented yet",
+      errors: this.entityStore + " client not implemented yet",
     };
   }
 
@@ -35,7 +35,7 @@ export class Client {
     return {
       key,
       value,
-      errors: "db client not implemented yet",
+      errors: this.entityStore + " client not implemented yet",
     };
   }
 }

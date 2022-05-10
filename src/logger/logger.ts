@@ -9,12 +9,7 @@ export class Logger {
     process.stdout.write(`  Request: ${request}\n`);
     process.stdout.write(`  Response: ${response}\n`);
     if (errors.length > 0) {
-      let errMsg = "";
-      errors.forEach((err) => {
-        errMsg += ` ${err}`;
-        return false;
-      });
-      process.stdout.write(`  Errors: ${errMsg}\n`);
+      process.stdout.write(`  Errors: ${errors.join(", ")}\n`);
     }
     process.stdout.write("\n\n");
   }
