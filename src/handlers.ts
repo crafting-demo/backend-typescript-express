@@ -13,21 +13,25 @@ import { ProducerFactory } from "./kafka";
 import { logger } from "./logger";
 
 // NestedCallHandler handles a "nested call" API.
-// Accepts POST requests with a JSON body specifying the nested call.
-// It processes the nested call, and returns the result JSON message.
+// Accepts POST requests with a JSON body specifying
+// the nested call, and returns the response JSON.
 export const NestedCallHandler = async (
   req: Express.Request,
   res: Express.Response
 ) => {
-  let message: Message;
+  const receivedAt = currentTime();
+  const errors: string[] = [];
 
+  let message: Message;
   try {
     message = JSON.parse(JSON.stringify(req.body)) as Message;
   } catch (err) {
-    logger.write("NestedCallHandler", "failed to parse message", err);
+    logger.WriteContext("", "", errors.concat(`${err}`), receivedAt);
     res.status(500).send("Internal server error");
     return;
   }
+
+  const request = JSON.stringify(message);
 
   for (let i = 0; i < message.actions.length; i += 1) {
     const action = message.actions[i];
@@ -37,13 +41,9 @@ export const NestedCallHandler = async (
         break;
       case ActionType.Read: {
         const readClient = new DBClient(action.payload.serviceName);
-        const readOp = readClient.readEntity(action.payload.key || "");
+        const readOp = await readClient.readEntity(action.payload.key || "");
         if (readOp.errors) {
-          logger.write(
-            "NestedCallHandler",
-            "failed to read key",
-            readOp.errors
-          );
+          errors.push(readOp.errors);
           message.actions[i].status = StatusType.Failed;
           break;
         }
@@ -53,16 +53,12 @@ export const NestedCallHandler = async (
       }
       case ActionType.Write: {
         const writeClient = new DBClient(action.payload.serviceName);
-        const writeOp = writeClient.writeEntity(
+        const writeOp = await writeClient.writeEntity(
           action.payload.key || "",
           action.payload.value
         );
         if (writeOp.errors) {
-          logger.write(
-            "NestedCallHandler",
-            "failed to write key/value pair",
-            writeOp.errors
-          );
+          errors.push(writeOp.errors);
           message.actions[i].status = StatusType.Failed;
           break;
         }
@@ -70,14 +66,9 @@ export const NestedCallHandler = async (
         break;
       }
       case ActionType.Call: {
-        // eslint-disable-next-line no-await-in-loop
         const resp = await serviceCall(action.payload);
         if (!resp) {
-          logger.write(
-            "NestedCallHandler",
-            `failed to call ${action.payload.serviceName}`,
-            null
-          );
+          errors.push(`failed to call ${action.payload.serviceName}`);
           message.actions[i].status = StatusType.Failed;
           break;
         }
@@ -97,11 +88,12 @@ export const NestedCallHandler = async (
 
   res.json(message);
 
-  if (message.meta.caller !== ServiceType.React) {
-    return;
-  }
+  const response = JSON.stringify(message);
+  logger.WriteContext(request, response, errors, receivedAt);
 
-  enqueueMessage(ServiceType.React, message);
+  if (message.meta.caller === ServiceType.React) {
+    enqueueMessage(ServiceType.React, message);
+  }
 };
 
 const serviceCall = async (payload: Payload): Promise<Message | null> => {

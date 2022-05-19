@@ -21,6 +21,7 @@ module.exports = {
     "import/prefer-default-export": "off",
     "react/jsx-filename-extension": "off",
     "import/no-unresolved": "error",
+    "no-await-in-loop": "off",
     "import/order": [
       "error",
       {
