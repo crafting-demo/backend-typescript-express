@@ -13,8 +13,6 @@ import { ProducerFactory } from "./kafka";
 import { logger } from "./logger";
 
 // NestedCallHandler handles a "nested call" API.
-// Accepts POST requests with a JSON body specifying
-// the nested call, and returns the response JSON.
 export const NestedCallHandler = async (
   req: Express.Request,
   res: Express.Response
@@ -26,7 +24,7 @@ export const NestedCallHandler = async (
   try {
     message = JSON.parse(JSON.stringify(req.body)) as Message;
   } catch (err) {
-    logger.WriteContext("", "", errors.concat(`${err}`), receivedAt);
+    logger.LogContext("", "", errors.concat(`${err}`), receivedAt);
     res.status(500).send("Internal server error");
     return;
   }
@@ -89,11 +87,7 @@ export const NestedCallHandler = async (
   res.json(message);
 
   const response = JSON.stringify(message);
-  logger.WriteContext(request, response, errors, receivedAt);
-
-  if (message.meta.caller === ServiceType.React) {
-    enqueueMessage(ServiceType.React, message);
-  }
+  logger.LogContext(request, response, errors, receivedAt);
 };
 
 const serviceCall = async (payload: Payload): Promise<Message | null> => {
@@ -110,7 +104,7 @@ const serviceCall = async (payload: Payload): Promise<Message | null> => {
   return client.makeServiceCall(message);
 };
 
-const enqueueMessage = (topic: string, message: Message) => {
+export const enqueueMessage = (topic: string, message: Message) => {
   const producer = new ProducerFactory();
   producer.start().then(() => {
     producer.enqueue(topic, JSON.stringify(message));
