@@ -1,5 +1,5 @@
 export class Logger {
-  public static WriteContext(
+  public static LogContext(
     request: string,
     response: string,
     errors: string[],
