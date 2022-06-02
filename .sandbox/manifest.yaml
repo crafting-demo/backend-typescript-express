@@ -5,7 +5,7 @@ hooks:
     cmd: yarn build
 
 daemons:
-  server:
+  typescript-express:
     run:
       cmd: yarn start
       env:
