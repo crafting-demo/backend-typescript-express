@@ -14,8 +14,12 @@ export class Logger {
     process.stdout.write("\n\n");
   }
 
-  public static Write(source: string, desc: string, err: any) {
+  public static Writef(source: string, desc: string, err: any) {
     process.stdout.write(`${source}: ${desc}${err ? `: ${err}` : ""}\n\n`);
+  }
+
+  public static Write(message: string) {
+    process.stdout.write(`${message}\n`);
   }
 }
 
