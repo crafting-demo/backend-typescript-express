@@ -88,6 +88,8 @@ export const NestedCallHandler = async (
 
   const response = JSON.stringify(message);
   logger.LogContext(request, response, errors, receivedAt);
+
+  enqueueMessage(message.meta.caller, message);
 };
 
 const serviceCall = async (payload: Payload): Promise<Message | null> => {
