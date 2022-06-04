@@ -18,7 +18,7 @@ export class ProducerFactory {
     try {
       await this.producer.connect();
     } catch (err) {
-      logger.Write("ProducerFactory", "failed to connect producer", err);
+      logger.Writef("ProducerFactory", "failed to connect producer", err);
     }
   }
 

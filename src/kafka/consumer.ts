@@ -38,7 +38,7 @@ export class ConsumerFactory {
         },
       });
     } catch (err) {
-      logger.Write("ConsumerFactory", "failed to consume topic", err);
+      logger.Writef("ConsumerFactory", "failed to consume topic", err);
     }
   }
 
@@ -65,7 +65,7 @@ export class ConsumerFactory {
         },
       });
     } catch (err) {
-      logger.Write("ConsumerFactory", "failed to consume topic batch", err);
+      logger.Writef("ConsumerFactory", "failed to consume topic batch", err);
     }
   }
 

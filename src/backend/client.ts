@@ -6,26 +6,35 @@ export class Client {
   private url: string;
 
   constructor(serviceType: string) {
-    const suffix = `${process.env.SANDBOX_ENDPOINT_DNS_SUFFIX}/api`;
+    let host: string | undefined;
+    let port: string | undefined;
+
     switch (serviceType) {
       case ServiceType.Gin:
-        this.url = `https://gin${suffix}`;
+        host = process.env.GIN_SERVICE_HOST;
+        port = process.env.GIN_SERVICE_PORT;
         break;
       case ServiceType.Express:
-        this.url = `https://express${suffix}`;
+        host = process.env.EXPRESS_SERVICE_HOST;
+        port = process.env.EXPRESS_SERVICE_PORT;
         break;
       case ServiceType.Rails:
-        this.url = `https://rails${suffix}`;
+        host = process.env.RAILS_SERVICE_HOST;
+        port = process.env.RAILS_SERVICE_PORT;
         break;
       case ServiceType.Spring:
-        this.url = `https://spring${suffix}`;
+        host = process.env.SPRING_SERVICE_HOST;
+        port = process.env.SPRING_SERVICE_PORT;
         break;
       case ServiceType.Django:
-        this.url = `https://django${suffix}`;
+        host = process.env.DJANGO_SERVICE_HOST;
+        port = process.env.DJANGO_SERVICE_PORT;
         break;
       default:
-        this.url = "unknown";
+        break;
     }
+
+    this.url = `http://${host}:${port}/api`;
   }
 
   public async makeServiceCall(message: Message): Promise<Message | null> {

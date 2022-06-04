@@ -9,7 +9,6 @@ import {
   StatusType,
 } from "./common/types";
 import { Client as DBClient } from "./db";
-import { ProducerFactory } from "./kafka";
 import { logger } from "./logger";
 
 // NestedCallHandler handles a "nested call" API.
@@ -17,6 +16,8 @@ export const NestedCallHandler = async (
   req: Express.Request,
   res: Express.Response
 ) => {
+  // logger.Write("Test Test Crafting");
+
   const receivedAt = currentTime();
   const errors: string[] = [];
 
@@ -102,13 +103,6 @@ const serviceCall = async (payload: Payload): Promise<Message | null> => {
 
   const client = new BackendClient(message.meta.callee);
   return client.makeServiceCall(message);
-};
-
-export const enqueueMessage = (topic: string, message: Message) => {
-  const producer = new ProducerFactory();
-  producer.start().then(() => {
-    producer.enqueue(topic, JSON.stringify(message));
-  });
 };
 
 const currentTime = (): string => new Date().toISOString();
