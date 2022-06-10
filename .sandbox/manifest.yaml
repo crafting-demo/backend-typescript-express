@@ -1,6 +1,6 @@
 hooks:
   post-checkout:
-    cmd: yarn install
+    cmd: yarn
   build:
     cmd: yarn build
 
