@@ -16,7 +16,7 @@ export const NestedCallHandler = async (
   req: Express.Request,
   res: Express.Response
 ) => {
-  // logger.Write("Test Test Crafting");
+  // process.stdout.write("Test Test Crafting\n");
 
   const receivedAt = currentTime();
   const errors: string[] = [];
