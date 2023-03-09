@@ -1,32 +1,51 @@
-import { Kafka, Message, Producer } from "kafkajs";
+import { Kafka, Producer } from "kafkajs";
 
 import { logger } from "../logger";
 
-export class ProducerFactory {
+export class KafkaProducer {
+  private static instance: KafkaProducer;
   private producer: Producer;
+  private connected: boolean;
 
-  private brokers: string[];
+  public static getInstance(): KafkaProducer {
+    if (!this.instance) {
+      this.instance = new KafkaProducer();
+    }
+    return this.instance;
+  }
 
-  constructor(brokers?: string[]) {
-    this.brokers = brokers || [
-      `${process.env.KAFKA_SERVICE_HOST}:${process.env.KAFKA_SERVICE_PORT}`,
-    ];
-    this.producer = this.createProducer();
+  private constructor() {
+    logger.Write("KafkaProducer: create instance");
+    const kafka = new Kafka({
+      brokers: [
+        `${process.env.KAFKA_SERVICE_HOST}:${process.env.KAFKA_SERVICE_PORT}`,
+      ],
+    });
+    this.producer = kafka.producer();
+    this.connected = false;
   }
 
   public async start() {
     try {
+      logger.Write("KafkaProducer: connecting");
       await this.producer.connect();
+      logger.Write("KafkaProducer: connected");
+      this.connected = true;
     } catch (err) {
-      logger.Writef("ProducerFactory", "failed to connect producer", err);
+      logger.Write("KafkaProducer: failed to connect producer: " + err);
     }
   }
 
   public async shutdown() {
-    await this.producer.disconnect();
+    if (this.connected) {
+      await this.producer.disconnect();
+    }
   }
 
   public async enqueue(topic: string, message: string) {
+    if (!this.connected) {
+      await this.start();
+    }
     await this.producer.send({
       topic,
       messages: [
@@ -35,28 +54,5 @@ export class ProducerFactory {
         },
       ],
     });
-  }
-
-  public async enqueueBatch(topic: string, messages: string[]) {
-    const kafkaMessages: Message[] = messages.map((msg) => ({
-      value: msg,
-    }));
-
-    await this.producer.sendBatch({
-      topicMessages: [
-        {
-          topic,
-          messages: kafkaMessages,
-        },
-      ],
-    });
-  }
-
-  private createProducer(): Producer {
-    const kafka = new Kafka({
-      brokers: this.brokers,
-    });
-
-    return kafka.producer();
   }
 }

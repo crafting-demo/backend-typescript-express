@@ -1,21 +1,23 @@
 import cors from "cors";
 import express from "express";
 
-import { NestedCallHandler } from "./handlers";
+import { ApiHandler } from "./handlers";
 import { logger } from "./logger";
+import { KafkaProducer } from "./kafka";
 
 const server = express();
 const { PORT } = process.env;
 if (!PORT) {
-  logger.Writef("server", "PORT must be set", null);
+  logger.Write("Server: PORT must be set");
   process.exit(1);
 }
 
 server.use(express.json());
 server.use(cors());
 
-server.post("/api", NestedCallHandler);
+server.post("/api", ApiHandler);
+KafkaProducer.getInstance().start();
 
 server.listen(PORT, () => {
-  logger.Writef("server listening on port", PORT, null);
+  logger.Write("Server: listening on port " + PORT);
 });
