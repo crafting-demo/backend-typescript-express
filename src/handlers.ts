@@ -30,7 +30,7 @@ export const ApiHandler = async (
   const receivedAt = currentTime();
 
   logger.Write(
-    "At " + receivedAt + " handling request: " + JSON.stringify(req.body)
+    `At ${receivedAt} handling request: ${JSON.stringify(req.body)}`
   );
 
   let request: RequestMessage;
@@ -42,9 +42,9 @@ export const ApiHandler = async (
     return;
   }
 
-  var result: string = "";
+  let result: string = "";
   request.callTime = currentTime();
-  logger.Write("Backend Type: " + request.target);
+  logger.Write(`Backend Type: ${request.target}`);
   if (request.target === BackendType.GinKafka) {
     KafkaProducer.getInstance().enqueue(
       "backend-go-gin",
@@ -52,7 +52,7 @@ export const ApiHandler = async (
     );
     result = "Message posted to Kafka for Go Gin service";
   } else {
-    var responseFromBackend: ResponseMessage | null = null;
+    let responseFromBackend: ResponseMessage | null = null;
     switch (request.target) {
       case BackendType.Gin:
         responseFromBackend = await makeServiceCall(
@@ -78,18 +78,21 @@ export const ApiHandler = async (
           request
         );
         break;
+      default:
+        responseFromBackend = null;
+        break;
     }
     logger.Write(
-      "Response from " + request.target + " : " + responseFromBackend?.message
+      `Response from ${request.target} : ${responseFromBackend?.message}`
     );
     result = responseFromBackend?.message || "FAILED!";
   }
 
-  var response: ResponseMessage = {
+  const response: ResponseMessage = {
     receivedTime: receivedAt,
     returnTime: currentTime(),
     message: result,
   };
-  logger.Write("At " + response.returnTime + " finish handling request");
+  logger.Write(`At ${response.returnTime} finish handling request`);
   res.json(response);
 };
