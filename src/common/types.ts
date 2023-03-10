@@ -1,4 +1,4 @@
-export enum ActionType {
+export enum MessageType {
   Hello = "Hello! How are you?",
   Echo = "Please echo",
   Read = "Read from database",
@@ -16,7 +16,7 @@ export enum BackendType {
 export interface RequestMessage {
   callTime: string;
   target: BackendType;
-  action: ActionType;
+  message: MessageType;
   key?: string;
   value?: string;
 }

@@ -2,7 +2,6 @@ hooks:
   build:
     cmd: |
       yarn
-      yarn build
 
 daemons:
   typescript-express:
