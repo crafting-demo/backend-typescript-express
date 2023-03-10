@@ -20,7 +20,8 @@ export class KafkaProducer {
     logger.Write("KafkaProducer: create instance");
     const kafka = new Kafka({
       brokers: [
-        `${process.env.KAFKA_SERVICE_HOST}:${process.env.KAFKA_SERVICE_PORT}`,
+        //`${process.env.KAFKA_SERVICE_HOST}:${process.env.KAFKA_SERVICE_PORT}`,
+        "127.0.0.1:9092",
       ],
     });
     this.producer = kafka.producer();

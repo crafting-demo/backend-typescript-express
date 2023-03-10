@@ -7,10 +7,9 @@ import { KafkaProducer } from "./kafka";
 import { logger } from "./logger";
 
 const server = express();
-const { PORT } = process.env;
+var { PORT } = process.env;
 if (!PORT) {
-  logger.Write("Server: PORT must be set");
-  process.exit(1);
+  PORT = "8080";
 }
 
 server.use(express.json());

@@ -45,51 +45,58 @@ export const ApiHandler = async (
   let result: string = "";
   request.callTime = currentTime();
   logger.Write(`Backend Type: ${request.target}`);
-  if (request.target === BackendType.GinKafka) {
-    KafkaProducer.getInstance().enqueue(
-      "backend-go-gin",
-      JSON.stringify(request)
-    );
-    result = "Message posted to Kafka for Go Gin service";
-  } else {
-    let responseFromBackend: ResponseMessage | null = null;
-    switch (request.target) {
-      case BackendType.Gin:
-        responseFromBackend = await makeServiceCall(
-          // `http://${process.env.GIN_SERVICE_HOST}:${process.env.GIN_SERVICE_PORT}/api`,
-          "http://127.0.0.1:8081/api",
-          request
-        );
-        break;
-      case BackendType.Django:
-        responseFromBackend = await makeServiceCall(
-          // `http://${process.env.DJANGO_SERVICE_HOST}:${process.env.DJANGO_SERVICE_PORT}/api`,
-          "http://127.0.0.1:8084/api",
-          request
-        );
-        break;
-      case BackendType.Rails:
-        responseFromBackend = await makeServiceCall(
-          // `http://${process.env.RAILS_SERVICE_HOST}:${process.env.RAILS_SERVICE_PORT}/api`,
-          "http://127.0.0.1:8082/api",
-          request
-        );
-        break;
-      case BackendType.Spring:
-        responseFromBackend = await makeServiceCall(
-          // `http://${process.env.SPRING_SERVICE_HOST}:${process.env.SPRING_SERVICE_PORT}/api`,
-          "http://127.0.0.1:8083/api",
-          request
-        );
-        break;
-      default:
-        responseFromBackend = null;
-        break;
+
+  try {
+    if (request.target === BackendType.GinKafka) {
+      KafkaProducer.getInstance().enqueue(
+        "backend-go-gin",
+        JSON.stringify(request)
+      );
+      result = "Message posted to Kafka for Go Gin service";
+    } else {
+      let responseFromBackend: ResponseMessage | null = null;
+      switch (request.target) {
+        case BackendType.Gin:
+          responseFromBackend = await makeServiceCall(
+            // `http://${process.env.GIN_SERVICE_HOST}:${process.env.GIN_SERVICE_PORT}/api`,
+            "http://127.0.0.1:8081/api",
+            request
+          );
+          break;
+        case BackendType.Django:
+          responseFromBackend = await makeServiceCall(
+            // `http://${process.env.DJANGO_SERVICE_HOST}:${process.env.DJANGO_SERVICE_PORT}/api`,
+            "http://127.0.0.1:8084/api",
+            request
+          );
+          break;
+        case BackendType.Rails:
+          responseFromBackend = await makeServiceCall(
+            // `http://${process.env.RAILS_SERVICE_HOST}:${process.env.RAILS_SERVICE_PORT}/api`,
+            "http://127.0.0.1:8082/api",
+            request
+          );
+          break;
+        case BackendType.Spring:
+          responseFromBackend = await makeServiceCall(
+            // `http://${process.env.SPRING_SERVICE_HOST}:${process.env.SPRING_SERVICE_PORT}/api`,
+            "http://127.0.0.1:8083/api",
+            request
+          );
+          break;
+        default:
+          responseFromBackend = null;
+          break;
+      }
+      logger.Write(
+        `Response from ${request.target} : ${responseFromBackend?.message}`
+      );
+      result = responseFromBackend?.message || "FAILED!";
     }
-    logger.Write(
-      `Response from ${request.target} : ${responseFromBackend?.message}`
-    );
-    result = responseFromBackend?.message || "FAILED!";
+  } catch (error) {
+    result = `Failed to process the request to ${
+      request.target
+    }, error message: ${(error as Error).message}`;
   }
 
   const response: ResponseMessage = {
