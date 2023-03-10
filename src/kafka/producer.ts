@@ -4,7 +4,9 @@ import { logger } from "../logger";
 
 export class KafkaProducer {
   private static instance: KafkaProducer;
+
   private producer: Producer;
+
   private connected: boolean;
 
   public static getInstance(): KafkaProducer {
@@ -32,7 +34,7 @@ export class KafkaProducer {
       logger.Write("KafkaProducer: connected");
       this.connected = true;
     } catch (err) {
-      logger.Write("KafkaProducer: failed to connect producer: " + err);
+      logger.Write(`KafkaProducer: failed to connect producer: ${err}`);
     }
   }
 
