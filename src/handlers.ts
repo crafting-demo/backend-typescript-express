@@ -1,108 +1,102 @@
 import Express from "express";
 
-import { Client as BackendClient } from "./backend";
-import {
-  ActionType,
-  Message,
-  Payload,
-  ServiceType,
-  StatusType,
-} from "./common/types";
-import { Client as DBClient } from "./db";
+import { ResponseMessage, RequestMessage, BackendType } from "./common/types";
+import { KafkaProducer } from "./kafka";
 import { logger } from "./logger";
 
-// NestedCallHandler handles a "nested call" API.
-export const NestedCallHandler = async (
+const currentTime = (): string => new Date().toISOString();
+
+async function makeServiceCall(
+  url: string,
+  message: RequestMessage
+): Promise<ResponseMessage | null> {
+  const resp = await fetch(url, {
+    method: "post",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(message),
+  });
+  if (!resp.ok) {
+    return null;
+  }
+  return (await resp.json()) as ResponseMessage | null;
+}
+
+export const ApiHandler = async (
   req: Express.Request,
   res: Express.Response
 ) => {
-  // process.stdout.write("Test Test Crafting\n");
-
   const receivedAt = currentTime();
-  const errors: string[] = [];
 
-  let message: Message;
+  logger.Write(
+    `At ${receivedAt} handling request: ${JSON.stringify(req.body)}`
+  );
+
+  let request: RequestMessage;
   try {
-    message = JSON.parse(JSON.stringify(req.body)) as Message;
+    request = JSON.parse(JSON.stringify(req.body)) as RequestMessage;
   } catch (err) {
-    logger.LogContext("", "", errors.concat(`${err}`), receivedAt);
-    res.status(500).send("Internal server error");
+    logger.Write("Error parsing message");
+    res.status(400).send();
     return;
   }
 
-  const request = JSON.stringify(message);
-
-  for (let i = 0; i < message.actions.length; i += 1) {
-    const action = message.actions[i];
-    switch (action.action) {
-      case ActionType.Echo:
-        message.actions[i].status = StatusType.Passed;
-        break;
-      case ActionType.Read: {
-        const readClient = new DBClient(action.payload.serviceName);
-        const readOp = await readClient.readEntity(action.payload.key || "");
-        if (readOp.errors) {
-          errors.push(readOp.errors);
-          message.actions[i].status = StatusType.Failed;
-          break;
-        }
-        message.actions[i].status = StatusType.Passed;
-        message.actions[i].payload.value = readOp.value;
-        break;
-      }
-      case ActionType.Write: {
-        const writeClient = new DBClient(action.payload.serviceName);
-        const writeOp = await writeClient.writeEntity(
-          action.payload.key || "",
-          action.payload.value
+  let result: string = "";
+  request.callTime = currentTime();
+  logger.Write(`Backend Type: ${request.target}`);
+  if (request.target === BackendType.GinKafka) {
+    KafkaProducer.getInstance().enqueue(
+      "backend-go-gin",
+      JSON.stringify(request)
+    );
+    result = "Message posted to Kafka for Go Gin service";
+  } else {
+    let responseFromBackend: ResponseMessage | null = null;
+    switch (request.target) {
+      case BackendType.Gin:
+        responseFromBackend = await makeServiceCall(
+          // `http://${process.env.GIN_SERVICE_HOST}:${process.env.GIN_SERVICE_PORT}/api`,
+          "http://127.0.0.1:8081/api",
+          request
         );
-        if (writeOp.errors) {
-          errors.push(writeOp.errors);
-          message.actions[i].status = StatusType.Failed;
-          break;
-        }
-        message.actions[i].status = StatusType.Passed;
         break;
-      }
-      case ActionType.Call: {
-        const resp = await serviceCall(action.payload);
-        if (!resp) {
-          errors.push(`failed to call ${action.payload.serviceName}`);
-          message.actions[i].status = StatusType.Failed;
-          break;
-        }
-        message.actions[i].status = StatusType.Passed;
-        message.actions[i].payload.actions = resp.actions;
+      case BackendType.Django:
+        responseFromBackend = await makeServiceCall(
+          // `http://${process.env.DJANGO_SERVICE_HOST}:${process.env.DJANGO_SERVICE_PORT}/api`,
+          "http://127.0.0.1:8084/api",
+          request
+        );
         break;
-      }
+      case BackendType.Rails:
+        responseFromBackend = await makeServiceCall(
+          // `http://${process.env.RAILS_SERVICE_HOST}:${process.env.RAILS_SERVICE_PORT}/api`,
+          "http://127.0.0.1:8082/api",
+          request
+        );
+        break;
+      case BackendType.Spring:
+        responseFromBackend = await makeServiceCall(
+          // `http://${process.env.SPRING_SERVICE_HOST}:${process.env.SPRING_SERVICE_PORT}/api`,
+          "http://127.0.0.1:8083/api",
+          request
+        );
+        break;
       default:
+        responseFromBackend = null;
         break;
     }
-
-    message.actions[i].serviceName = ServiceType.Express;
-    message.actions[i].returnTime = currentTime();
+    logger.Write(
+      `Response from ${request.target} : ${responseFromBackend?.message}`
+    );
+    result = responseFromBackend?.message || "FAILED!";
   }
 
-  message.meta.returnTime = currentTime();
-
-  res.json(message);
-
-  const response = JSON.stringify(message);
-  logger.LogContext(request, response, errors, receivedAt);
-};
-
-const serviceCall = async (payload: Payload): Promise<Message | null> => {
-  const message: Message = {
-    meta: {
-      caller: ServiceType.Express,
-      callee: payload.serviceName!,
-      callTime: currentTime(),
-    },
-    actions: payload.actions!,
+  const response: ResponseMessage = {
+    receivedTime: receivedAt,
+    returnTime: currentTime(),
+    message: result,
   };
-
-  const client = new BackendClient(message.meta.callee);
-  return client.makeServiceCall(message);
+  logger.Write(`At ${response.returnTime} finish handling request\n\n`);
+  res.json(response);
 };
-
-const currentTime = (): string => new Date().toISOString();

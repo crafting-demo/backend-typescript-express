@@ -1,8 +1,7 @@
 hooks:
-  post-checkout:
-    cmd: yarn
   build:
-    cmd: yarn build
+    cmd: |
+      yarn
 
 daemons:
   typescript-express:
